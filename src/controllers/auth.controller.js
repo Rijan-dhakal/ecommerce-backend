@@ -3,6 +3,7 @@ import { error } from "../utils/error.js";
 import User from "../models/user.model.js";
 import { issueJwt } from "../utils/jwtUtils.js";
 import Otp from "../models/otp.model.js";
+import sendEmail from "../utils/sendEmail.js";
 
 export const signup = async (req, res, next) => {
   
@@ -46,6 +47,11 @@ export const signup = async (req, res, next) => {
 
     createdOtp.status = 'semiverified';  // Update the status field
     await createdOtp.save();
+
+    sendEmail(newUser.email, {
+      username: newUser.username,
+      otp
+    });
 
     res.cookie('token', jwt, {
       httpOnly: true,
