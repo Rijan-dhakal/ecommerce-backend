@@ -28,7 +28,7 @@ setInterval(async () => {
   } catch (error) {
     console.error('Error during cleanup:', error);
   }
-}, 1 * 60 * 1000); 
+}, 5 * 60 * 1000); // Cleanup every 5 minutes
 
 app.use(errorMiddleware);
 

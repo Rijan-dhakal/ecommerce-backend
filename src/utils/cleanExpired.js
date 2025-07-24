@@ -5,7 +5,7 @@ export const cleanupExpiredUsers = async function() {
     try {
         const expiredOTPs = await Otp.find({
             status: { $in: ["unverified", "semiverified"] },
-            expiresIn: { $lt: new Date(Date.now() + 16 * 60 * 1000) } 
+            expiresIn: { $lt: new Date(Date.now()) } // Check for expired OTPs
         });
 
         const userIds = expiredOTPs.map(o => o.userId);
