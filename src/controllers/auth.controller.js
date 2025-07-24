@@ -51,13 +51,12 @@ export const signup = async (req, res, next) => {
     sendEmail(newUser.email, {
       username: newUser.username,
       otp
-    });
+    }, "otp");
 
     res.cookie('token', jwt, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 1000 * 60 * 15,
     });
 
     res.status(201).json({
@@ -71,5 +70,61 @@ export const signup = async (req, res, next) => {
         });
   } catch (error) {
       next(error);
+  }
+};
+
+export const login = async (req, res, next) => {
+  try {
+
+    if(!req.body) throw error("Request body is required", 400)
+
+    const { username, email, password } = req.body
+
+    if (!(email || username) || !password) throw error("Email and password are required", 400);
+
+    const user = await User.findOne({$or: [{ username }, { email }] });
+    if (!user) throw error("User not found", 404);
+
+    if (user.isVerified === false) throw error("User not verified", 403);
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) throw error("Invalid password", 401);
+
+
+    const jwt = issueJwt(user, user.isVerified, '7d');
+    if (!jwt) throw error("Failed to generate JWT", 500);
+
+    res.cookie('token', jwt, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      user: {
+        username: user.username,
+        email: user.email,
+        _id: user._id
+      }
+    });
+
+} catch(err){
+  next(err)
+}
+}
+
+export const logout = async (req, res, next) => {
+  try {
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
+    res.status(200).json({ success: true, message: 'Logged out successfully' });
+  } catch (err) {
+    next(err);
   }
 };

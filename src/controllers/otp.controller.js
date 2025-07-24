@@ -1,35 +1,67 @@
 import jwt from "jsonwebtoken";
 import { error } from "../utils/error.js";
 import Otp from "../models/otp.model.js";
+import { issueJwt } from "../utils/jwtUtils.js";
+import User from "../models/user.model.js";
+import sendEmail from "../utils/sendEmail.js";
 
 export const otp = async (req, res, next) => {
   try {
 
     const token = req.cookies?.token;
-    if (!token) error("Cookies not found");
+    if (!token) throw error("Cookies not found");
 
     const { otp } = req.body || {};
-    if (!otp) error("OTP not found");
+    if (!otp) throw error("OTP not found");
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded) error("Invalid token");
+    if (!decoded) throw error("Invalid token");
 
-    const { userId, otpId } = decoded;
-    if (!userId || !otpId) error("Invalid token payload");
+    const { userId, status } = decoded;
+    if (!userId || !status) throw error("Invalid token payload");
 
     const respOtp = await Otp.findOne({ userId });
-    if (!respOtp) error("OTP not found");
+    if (!respOtp) throw error("OTP not found");
 
     if (respOtp.status === "verified") {
       return res.status(200).json({ message: "OTP already verified" });
     }
 
+    if (respOtp.status === "unverified") throw error("Register to verify OTP", 400);
+
     if (respOtp.status === "semiverified") {
-      if (respOtp.otp !== otp) error("Invalid OTP");
+      if (respOtp.otp !== otp) throw error("Invalid OTP");
+
+      const user = await User.findById(userId);
+      if (!user) throw error("User not found");
+
+      user.isVerified = true;
+      await user.save();
+
       respOtp.status = "verified";
       respOtp.otp = null;
       await respOtp.save();
-      return res.status(200).json({ message: "OTP verified successfully" });
+
+      const token = issueJwt(user, respOtp, "7d");
+      if (!token) throw error("Failed to generate JWT");
+
+      sendEmail(user.email, {
+      username: user.username,
+    }, "welcome");
+
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
+
+      await Otp.deleteOne({ _id: respOtp._id });
+      
+      return res.status(200).json({success:true, message: "OTP verified successfully..Logged In", user:{
+        _id: user._id,
+        username: user.username,
+        email: user.email
+      } });
     }
     
   } catch (error) {

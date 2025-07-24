@@ -1,13 +1,23 @@
 import { transporter } from "../config/nodemailer.js";
-import { generateTemplate } from "./emailTemplates.js";
+import { otpTemplate, welcomeTemplate } from "./emailTemplates.js";
 
-const sendEmail = async (to, userData) => {
-  const htmlContent = generateTemplate(userData);
+const sendEmail = async (to, userData, type="otp") => {
+
+  let sub='', htmlContent= '';
+
+  if(type === 'otp') {
+    sub = 'OTP For Registration';
+    htmlContent = otpTemplate(userData)
+  }
+  if(type === 'welcome') {
+    sub = 'Welcome to E-Commerce!';
+    htmlContent = welcomeTemplate(userData);
+  }
 
   const mailOptions = {
     from: process.env.MAIL_USER,
     to,
-    subject: 'Test Email',
+    subject: sub,
     html: htmlContent
   };
 
