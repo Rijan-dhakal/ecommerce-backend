@@ -5,11 +5,14 @@ import {connectDB} from './database/connectDB.js';
 import cookieParser from 'cookie-parser';
 
 import authRouter from './routes/auth.route.js';
+import { cleanupExpiredUsers } from './utils/cleanExpired.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+connectDB();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -18,7 +21,14 @@ app.use(cookieParser())
 
 app.use('/api/auth', authRouter)
 
-connectDB();
+
+setInterval(async () => {
+  try {
+    await cleanupExpiredUsers();
+  } catch (error) {
+    console.error('Error during cleanup:', error);
+  }
+}, 1 * 60 * 1000); 
 
 app.use(errorMiddleware);
 
