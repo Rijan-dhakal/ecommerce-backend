@@ -174,8 +174,7 @@ export const resetPassword = async (req, res, next) => {
     const user = await User.findOne({ resetToken: token });
     if (!user) throw error("Invalid reset token", 400);
 
-    user.resetToken = null;
-    user.resetTokenExpires = null;
+    user.resetToken = 'already-used';
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
