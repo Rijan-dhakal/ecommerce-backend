@@ -165,12 +165,13 @@ export const forgotPassword = async (req, res, next) => {
 export const resetPassword = async (req, res, next) => {
   try {
     
-    const {resetToken} = req.params;
+    const { token } = req.query;
+    if (!token) throw error("Reset token is required", 400);
+
     const { newPassword } = req.body;
+    if (!token || !newPassword) throw error("Reset token and new password are required", 400);
 
-    if (!resetToken || !newPassword) throw error("Reset token and new password are required", 400);
-
-    const user = User.findOne({resetToken})
+    const user = await User.findOne({ resetToken: token });
     if (!user) throw error("Invalid reset token", 400);
 
     user.resetToken = null;
