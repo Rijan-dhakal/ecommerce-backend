@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 
 import authRouter from './routes/auth.route.js';
 import { cleanupExpiredUsers } from './utils/cleanExpired.js';
+import { cleanupExpiredResetTokens } from './utils/cleanExpired.js';
 
 dotenv.config();
 
@@ -25,8 +26,9 @@ app.use('/api/auth', authRouter)
 setInterval(async () => {
   try {
     await cleanupExpiredUsers();
+    await cleanupExpiredResetTokens();
   } catch (error) {
-    console.error('Error during cleanup:', error);
+    console.error("Error during cleanup:", error);
   }
 }, 5 * 60 * 1000); // Cleanup every 5 minutes
 

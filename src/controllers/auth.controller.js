@@ -4,6 +4,7 @@ import User from "../models/user.model.js";
 import { issueJwt } from "../utils/jwtUtils.js";
 import Otp from "../models/otp.model.js";
 import sendEmail from "../utils/sendEmail.js";
+import crypto from "crypto";
 
 export const signup = async (req, res, next) => {
   
@@ -29,7 +30,7 @@ export const signup = async (req, res, next) => {
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
 
     if (existingUser) {
-      throw error("User already exists", 409);
+      throw error("User already exists try new username or email", 409);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -83,12 +84,12 @@ export const login = async (req, res, next) => {
     if (!(email || username) || !password) throw error("Email and password are required", 400);
 
     const user = await User.findOne({$or: [{ username }, { email }] });
-    if (!user) throw error("User not found", 404);
+    if (!user) throw error("Invalid credentials", 401);
 
     if (user.isVerified === false) throw error("User not verified", 403);
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) throw error("Invalid password", 401);
+    if (!isPasswordValid) throw error("Invalid credentials", 401);
 
 
     const jwt = issueJwt(user, user.isVerified, '7d');
@@ -126,5 +127,88 @@ export const logout = async (req, res, next) => {
     res.status(200).json({ success: true, message: 'Logged out successfully' });
   } catch (err) {
     next(err);
+  }
+};
+
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) throw error("Email is required", 400);
+
+    const user = await User.findOne({ email });
+    if (!user) res.status(200).json({success: true, message: 'If the email exists, a reset link will be sent'});
+
+    if (!user.isVerified) throw error("User not verified", 403);
+
+    user.resetToken = crypto.randomBytes(32).toString('hex');
+    user.resetTokenExpires = Date.now() + 30 * 60 * 1000; // Token valid for 30 minutes
+    await user.save();
+
+    const resetLink = `${process.env.SITE_URL}/reset-password?token=${user.resetToken}`;
+
+    sendEmail(user.email, {
+      username: user.username,
+      resetLink
+    }, "resetPassword");
+
+    res.status(200).json({
+      success: true,
+      message: 'If the email exists, a reset link will be sent',
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    
+    const {resetToken} = req.params;
+    const { newPassword } = req.body;
+
+    if (!resetToken || !newPassword) throw error("Reset token and new password are required", 400);
+
+    const user = User.findOne({resetToken})
+    if (!user) throw error("Invalid reset token", 400);
+
+    user.resetToken = null;
+    user.resetTokenExpires = null;
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successfully',
+    });
+
+  } catch (error) {
+    next(error)
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) throw error("Old and new passwords are required", 400);
+
+    const user = await User.findById(req.user._id);
+    if (!user) throw error("User not found", 404);
+
+    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isOldPasswordValid) throw error("Old password is incorrect", 401);
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+
+  } catch (error) {
+    next(error);
   }
 };

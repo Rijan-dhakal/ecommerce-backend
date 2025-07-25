@@ -99,3 +99,74 @@ export const welcomeTemplate = (userData) => {
     </html>
   `;
 }
+
+export const resetPasswordTemplate = (userData) => {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Reset Your Password</title>
+        <style>
+          .container {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 24px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            font-family: Arial, sans-serif;
+          }
+          .header {
+            font-size: 1.5em;
+            color: #2e6c80;
+            margin-bottom: 16px;
+            text-align: center;
+          }
+          .content {
+            font-size: 1em;
+            color: #333;
+            margin-bottom: 24px;
+            text-align: center;
+          }
+          .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #2e6c80;
+            color: #fff !important;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 1em;
+            margin: 16px 0;
+            transition: background 0.2s;
+          }
+          .button:hover {
+            background-color: #1d4d5c;
+          }
+          .footer {
+            font-size: 0.9em;
+            color: #888;
+            margin-top: 24px;
+            text-align: center;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">Reset Your Password</div>
+          <div class="content">
+            Hi ${userData.username},<br>
+            We received a request to reset your password.<br>
+            Click the button below to set a new password:
+          </div>
+          <div style="text-align: center;">
+            <a href="${userData.resetLink}" class="button" target="_blank" rel="noopener noreferrer">Reset Password</a>
+          </div>
+          <div class="footer">
+            If you did not request a password reset, you can safely ignore this email.
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}

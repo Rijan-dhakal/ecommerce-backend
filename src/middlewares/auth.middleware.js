@@ -1,5 +1,6 @@
 import { error } from "../utils/error.js";
 import jwt from "jsonwebtoken"
+import User from "../models/user.model.js";
 
 
 export const authorize = async (req, res, next) => {
@@ -10,7 +11,14 @@ export const authorize = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if (!decoded || !decoded.userId) throw error("Invalid token");
 
-        req.user = decoded
+        if (!decoded?.status) throw error("User not verified", 403);
+
+        const user = await User.findById(decoded.userId).select("-password -__v -resetToken -resetTokenExpires -profilePicture -createdAt -updatedAt");
+        if (!user) throw error("Unauthorized", 404);
+
+
+
+        req.user = user;
 
         next()
         
