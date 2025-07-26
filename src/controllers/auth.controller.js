@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import { error } from "../utils/error.js";
 import User from "../models/user.model.js";
 import { issueJwt } from "../utils/jwtUtils.js";
@@ -7,7 +6,6 @@ import sendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
 
 export const signup = async (req, res, next) => {
-  
   try {
     const { username, email, password } = req.body || {};
 
@@ -33,9 +31,8 @@ export const signup = async (req, res, next) => {
       throw error("User already exists try new username or email", 409);
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = await User.create({ username, email, password: hashedPassword });
+    // password is hashed before saving by the pre-save hook in user.model.js
+    const newUser = await User.create({ username, email, password });
     if (!newUser) throw error("User creation failed", 500);
 
     const otp = Math.floor(Math.random() * 900000 + 100000);
@@ -88,9 +85,8 @@ export const login = async (req, res, next) => {
 
     if (user.isVerified === false) throw error("User not verified", 403);
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) throw error("Invalid credentials", 401);
-
 
     const jwt = issueJwt(user, user.isVerified, '7d');
     if (!jwt) throw error("Failed to generate JWT", 500);
@@ -174,9 +170,7 @@ export const resetPassword = async (req, res, next) => {
     const user = await User.findOne({ resetToken: token });
     if (!user) throw error("Invalid reset token", 400);
 
-    user.resetToken = 'already-used';
-    user.password = await bcrypt.hash(newPassword, 10);
-    await user.save();
+    await user.resetPassword(newPassword);
 
     res.status(200).json({
       success: true,
@@ -197,10 +191,8 @@ export const changePassword = async (req, res, next) => {
     const user = await User.findById(req.user._id);
     if (!user) throw error("User not found", 404);
 
-    const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
-    if (!isOldPasswordValid) throw error("Old password is incorrect", 401);
+    await user.changePassword(oldPassword);
 
-    user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
     res.status(200).json({
