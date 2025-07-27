@@ -15,7 +15,7 @@ export const signup = async (req, res, next) => {
     if (username.length < 3 || username.length > 20) {
       throw error("Username must be between 3 and 20 characters", 400);
     }
-    if (!/^[a-zA-Z0-9_.-]+$/.test(username  )) {
+    if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
       throw error("Username can only contain letters, numbers, underscores, and hyphens", 400);
     }
     if (!/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {

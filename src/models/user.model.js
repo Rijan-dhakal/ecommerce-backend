@@ -28,17 +28,19 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    cartData: {
+        type: Object,
+        default: {}
+    },
     resetToken: {
         type: String,
     },
     resetTokenExpires: {
         type: Date,
     },
-    profilePicture: {
-        type: String,
-    }
 }, {
-    timestamps: true
+    timestamps: true,
+    minimize: false
 })
 
 
@@ -68,6 +70,7 @@ userSchema.methods.changePassword = async function (newPassword) {
 userSchema.methods.resetPassword = async function (newPassword) {
     this.password = newPassword;
     this.resetToken = undefined;
+    this.resetTokenExpires = undefined;
     await this.save();
 }
 
