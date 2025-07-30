@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { error } from "../utils/error.js";
+import { type } from "os";
 
 const userSchema = new mongoose.Schema({
     username: {
@@ -25,6 +26,10 @@ const userSchema = new mongoose.Schema({
         minlength: 6,
     },
     isVerified: {
+        type: Boolean,
+        default: false
+    },
+    isAdmin:{
         type: Boolean,
         default: false
     },
@@ -60,8 +65,8 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
-userSchema.methods.changePassword = async function (newPassword) {
-    const isMatch = await this.comparePassword(newPassword);
+userSchema.methods.changePassword = async function (oldPassword, newPassword) {
+    const isMatch = await this.comparePassword(oldPassword);
     if (!isMatch) throw error('Current password is incorrect', 400);
     this.password = newPassword;
     await this.save();

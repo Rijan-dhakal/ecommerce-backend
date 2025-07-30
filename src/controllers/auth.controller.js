@@ -40,11 +40,8 @@ export const signup = async (req, res, next) => {
     const createdOtp = await Otp.create({userId: newUser._id, otp, status: 'unverified'})
     if (!createdOtp) throw error("Failed to perform otp operation")
 
-    const jwt =  issueJwt(newUser, createdOtp, '15m')
+    const jwt =  issueJwt(newUser, '15m', false)
     if(!jwt) throw error('Failed to generate jwt')
-
-    createdOtp.status = 'semiverified';  // Update the status field
-    await createdOtp.save();
 
     sendEmail(newUser.email, {
       username: newUser.username,
@@ -80,7 +77,7 @@ export const login = async (req, res, next) => {
 
     if (!(email || username) || !password) throw error("Email and password are required", 400);
 
-    const user = await User.findOne({$or: [{ username }, { email }] });
+    const user = await User.findOne({$or: [{ username }, { email }] }).select("-isAdmin");
     if (!user) throw error("Invalid credentials", 401);
 
     if (user.isVerified === false) throw error("User not verified", 403);
@@ -88,7 +85,7 @@ export const login = async (req, res, next) => {
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) throw error("Invalid credentials", 401);
 
-    const jwt = issueJwt(user, user.isVerified, '7d');
+    const jwt = issueJwt(user, '7d', false); // Admin status is always false for regular login
     if (!jwt) throw error("Failed to generate JWT", 500);
 
     res.cookie('token', jwt, {
@@ -133,7 +130,9 @@ export const forgotPassword = async (req, res, next) => {
     if (!email) throw error("Email is required", 400);
 
     const user = await User.findOne({ email });
-    if (!user) res.status(200).json({success: true, message: 'If the email exists, a reset link will be sent'});
+    if (!user) {
+      return res.status(200).json({success: true, message: 'If the email exists, a reset link will be sent'});
+    }
 
     if (!user.isVerified) throw error("User not verified", 403);
 
@@ -191,15 +190,54 @@ export const changePassword = async (req, res, next) => {
     const user = await User.findById(req.user._id);
     if (!user) throw error("User not found", 404);
 
-    await user.changePassword(oldPassword);
-
-    await user.save();
+    await user.changePassword(oldPassword, newPassword);
 
     res.status(200).json({
       success: true,
       message: 'Password changed successfully',
     });
 
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const adminLogin = async (req, res, next) => {
+  try {
+    if(!req.body) throw error("Request body is required", 400);
+
+    const { username, email, password } = req.body;
+
+    if (!(email || username) || !password) throw error("Email of Username and password are required", 400);
+
+    const user = await User.findOne({$or: [{ username }, { email }] }); 
+    if (!user) throw error("Invalid credentials", 401);
+
+    if (!user.isAdmin) throw error("Access denied. Admin privileges required", 403);
+    if (user.isVerified === false) throw error("User not verified", 403);
+
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) throw error("Invalid credentials", 401);
+
+    const jwt = issueJwt(user, '7d', true); // True for admin login
+    if (!jwt) throw error("Failed to generate JWT", 500);
+
+    res.cookie('token', jwt, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Admin login successful',
+      user: {
+        username: user.username,
+        email: user.email,
+        _id: user._id,
+        isAdmin: user.isAdmin
+      }
+    });
   } catch (error) {
     next(error);
   }

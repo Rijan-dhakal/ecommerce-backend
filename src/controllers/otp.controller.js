@@ -17,19 +17,17 @@ export const otp = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded) throw error("Invalid token");
 
-    const { userId, status } = decoded;
-    if (!userId || !status) throw error("Invalid token payload");
+    const { userId } = decoded;
+    if (!userId) throw error("Invalid token payload");
 
     const respOtp = await Otp.findOne({ userId });
     if (!respOtp) throw error("OTP not found");
 
     if (respOtp.status === "verified") {
-      return res.status(200).json({ message: "OTP already verified" });
+      return res.status(200).json({ success: true, message: "OTP already verified" });
     }
 
-    if (respOtp.status === "unverified") throw error("Register to verify OTP", 400);
-
-    if (respOtp.status === "semiverified") {
+    if (respOtp.status === "unverified") {
       if (respOtp.otp !== otp) throw error("Invalid OTP");
 
       const user = await User.findById(userId);
@@ -42,7 +40,7 @@ export const otp = async (req, res, next) => {
       respOtp.otp = null;
       await respOtp.save();
 
-      const token = issueJwt(user, respOtp, "7d");
+      const token = issueJwt(user, "7d", false);
       if (!token) throw error("Failed to generate JWT");
 
       sendEmail(user.email, {

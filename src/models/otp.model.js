@@ -13,7 +13,7 @@ const otpSchema = new mongoose.Schema({
     },
     status:{
         type: String,
-        enum:['unverified', 'semiverified', 'verified'],
+        enum:['unverified', 'verified'],
         default: 'unverified'
     },
     expiresIn:{

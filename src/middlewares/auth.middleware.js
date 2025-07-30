@@ -11,18 +11,34 @@ export const authorize = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         if (!decoded || !decoded.userId) throw error("Invalid token");
 
-        if (!decoded?.status) throw error("User not verified", 403);
+        if (!decoded?.isVerified) throw error("User not verified", 403);
 
-        const user = await User.findById(decoded.userId).select("-password -__v -resetToken -resetTokenExpires -profilePicture -createdAt -updatedAt");
+        // Verify user exists in database
+        const user = await User.findById(decoded.userId);
         if (!user) throw error("Unauthorized", 404);
 
-
-
-        req.user = user;
+        // Attach user info to request object
+        req.user = {
+            _id: decoded.userId,
+            email: decoded.email,
+            isVerified: decoded.isVerified,
+            isAdmin: decoded.isAdmin, 
+            username: user.username 
+        };
 
         next()
         
     } catch (error) {
         res.status(401).json({success: false, message: "Unauthorized" });
+    }
+}
+
+export const isAdmin = async (req, res, next) => {
+    try {
+        const {isAdmin} = req.user
+        if (!isAdmin) throw error("Access denied. Admin privileges required", 403);
+        next();
+    } catch (error) {
+        res.status(403).json({success: false, message: "Access denied. Admin privileges required" });
     }
 }

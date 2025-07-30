@@ -4,7 +4,7 @@ import User from "../models/user.model.js";
 export const cleanupExpiredUsers = async function () {
   try {
     const expiredOTPs = await Otp.find({
-      status: { $in: ["unverified", "semiverified"] },
+      status: "unverified",
       expiresIn: { $lt: new Date(Date.now()) }, // Check for expired OTPs
     });
 

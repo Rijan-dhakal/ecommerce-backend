@@ -1,22 +1,12 @@
 import jwt from 'jsonwebtoken'
 
-export const issueJwt = (user, verif="default", expire) => {
-
-    let details;
-
-    if(verif === 'default'){
-        details = {
+export const issueJwt = (user, expire, isAdminLogin = false) => {
+    const payload = {
         userId: user._id,
         email: user.email,
-        status: verif.status,
-        }
-    } else{
-         details = {
-        userId: user._id,
-        email: user.email,
-        status: verif,
-    }
-    }
+        isVerified: user.isVerified || false,
+        isAdmin: isAdminLogin ? (user.isAdmin || false) : false
+    };
 
-    return jwt.sign(details, process.env.JWT_SECRET, {expiresIn: expire})
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: expire });
 }
