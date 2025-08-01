@@ -45,7 +45,7 @@ export const addProduct = async (req, res, next) => {
         const product = new Product(productData);
         const resp = await product.save();
 
-        if (!resp) throw error(500, "Failed to add products");
+        if (!resp) throw error("Product not added", 500);
 
         res.status(201).json({success: true, message: "Product added successfully", product: resp})
 
@@ -76,7 +76,7 @@ export const removeProduct = async (req, res, next) => {
     const { id } = req.params;
     if (!id) throw error("Product ID is required", 400);
     const product = await Product.findByIdAndDelete(id);
-    if (!product) throw error(404, "Product not found");
+    if (!product) throw error("Product not found", 404);
 
 
     // Check if product has images

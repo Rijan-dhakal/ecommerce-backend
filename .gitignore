@@ -117,3 +117,9 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+*png
+*jpg
+*jpeg
+*gif
+*svg
+*webp
