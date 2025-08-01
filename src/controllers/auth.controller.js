@@ -213,8 +213,8 @@ export const adminLogin = async (req, res, next) => {
     const user = await User.findOne({$or: [{ username }, { email }] }); 
     if (!user) throw error("Invalid credentials", 401);
 
-    if (!user.isAdmin) throw error("Access denied. Admin privileges required", 403);
     if (user.isVerified === false) throw error("User not verified", 403);
+    if (!user.isAdmin) throw error("Access denied. Admin privileges required", 403);
 
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) throw error("Invalid credentials", 401);
