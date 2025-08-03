@@ -10,6 +10,7 @@ import { cleanupExpiredResetTokens } from './utils/cleanExpired.js';
 import connectCloudinary from './config/cloudinary.js';
 import productRouter from './routes/product.route.js';
 import cartRouter from './routes/cart.route.js';
+import orderRouter from './routes/order.route.js';
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use(cookieParser())
 app.use('/api/auth', authRouter)
 app.use('/api/product', productRouter)
 app.use('/api/cart', cartRouter)
+app.use('/api/order', orderRouter)
 
 
 setInterval(async () => {

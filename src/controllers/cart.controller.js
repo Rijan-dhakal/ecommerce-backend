@@ -1,17 +1,25 @@
+import mongoose from "mongoose";
 import User from "../models/user.model.js"
 import { error } from "../utils/error.js"
+import Product from "../models/product.model.js";
+
 
 export const addToCart = async (req, res, next) => {
     try {
         const {itemId} = req.body
         const userId = req.user._id
 
-        if(!itemId) throw error("All fields are required", 401)
+        if(!itemId || !mongoose.Types.ObjectId.isValid(itemId)) throw error("All fields are required OR Invalid itemId", 401)
 
         if(!userId) throw error("Unauthorized", 401)
 
+        console.log(userId);
+        
         const userData = await User.findById(userId)
         if(!userData) throw error("User not found", 400)
+
+        const isProductExists = await Product.findById(itemId)
+        if(!isProductExists ) throw error("Product not found", 404)
 
         let cartData = await userData.cartData
 

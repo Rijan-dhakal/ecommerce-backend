@@ -1,5 +1,5 @@
 import { transporter } from "../config/nodemailer.js";
-import { otpTemplate, welcomeTemplate, resetPasswordTemplate } from "./emailTemplates.js";
+import { otpTemplate, welcomeTemplate, resetPasswordTemplate, orderConfirmationTemplate } from "./emailTemplates.js";
 
 const sendEmail = async (to, userData, type="otp") => {
 
@@ -16,6 +16,10 @@ const sendEmail = async (to, userData, type="otp") => {
   if(type === 'resetPassword') {
     sub = 'Reset Password';
     htmlContent = resetPasswordTemplate(userData);
+  }
+  if(type === "order"){
+    sub = "Order Details",
+    htmlContent = orderConfirmationTemplate(userData);
   }
 
   const mailOptions = {
