@@ -114,7 +114,7 @@ export const removeProduct = async (req, res, next) => {
             const publicId = image.split('/').pop().split('.')[0]; // Extract public ID from URL
             await cloudinary.uploader.destroy(publicId);
         }
-    }
+    }   
   
     res.status(200).json({success: true, message: "Product removed successfully"});
 
