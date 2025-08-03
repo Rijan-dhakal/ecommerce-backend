@@ -25,9 +25,10 @@ export const placeOrder = async (req, res, next) => {
       date: Date.now(),
     };
 
-
-    const productIds = items.map(item => item.productId);
-    const products = await Product.find({_id: {$in: productIds}}).select("name price");
+    const productIds = items.map((item) => item.productId);
+    const products = await Product.find({ _id: { $in: productIds } }).select(
+      "name price"
+    );
     if (!products || products.length === 0) {
       throw error("No products found for the given items", 404);
     }
@@ -40,42 +41,43 @@ export const placeOrder = async (req, res, next) => {
     await User.findByIdAndUpdate(userId, { cartData: {}, new: true });
 
     // Combine items with product details for email
-    const itemsWithDetails = items.map(item => {
-      const product = products.find(p => p._id.toString() === item.productId.toString());
+    const itemsWithDetails = items.map((item) => {
+      const product = products.find(
+        (p) => p._id.toString() === item.productId.toString()
+      );
       return {
         productId: item.productId,
-        name: product ? product.name : 'Unknown Product',
+        name: product ? product.name : "Unknown Product",
         quantity: item.quantity,
-        price: product ? product.price : 0
+        price: product ? product.price : 0,
       };
     });
 
-     const emailData = {
-        username: req.user.username,
-        items: itemsWithDetails,
-        date: resp.date,
-        paymentMethod: resp.paymentMethod,
-        payment: resp.payment,
-        amount: resp.amount
+    const emailData = {
+      username: req.user.username,
+      items: itemsWithDetails,
+      date: resp.date,
+      paymentMethod: resp.paymentMethod,
+      payment: resp.payment,
+      amount: resp.amount,
     };
 
-     sendEmail(req.user.email, emailData, "order");
+    sendEmail(req.user.email, emailData, "order");
 
     res.status(201).json({
-        success: true,
-        message: "Order placed successfully",
-        data: {
-            orderId: resp._id,
-            items: itemsWithDetails,
-            amount: resp.amount,
-            address: resp.address,
-            status: resp.status,
-            paymentMethod: resp.paymentMethod,
-            payment: resp.payment,
-            date: resp.date
-        }
-    })
-    
+      success: true,
+      message: "Order placed successfully",
+      data: {
+        orderId: resp._id,
+        items: itemsWithDetails,
+        amount: resp.amount,
+        address: resp.address,
+        status: resp.status,
+        paymentMethod: resp.paymentMethod,
+        payment: resp.payment,
+        date: resp.date,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -95,7 +97,6 @@ export const userOrders = async (req, res, next) => {
       message: "Orders retrieved successfully",
       orders,
     });
-
   } catch (error) {
     next(error);
   }
@@ -104,15 +105,14 @@ export const userOrders = async (req, res, next) => {
 // order data for admin
 export const allOrders = async (req, res, next) => {
   try {
-    const orders = await Order.find({}).sort({ date: -1 })
-    if(!orders || orders.length === 0) throw error("No orders found", 404);
+    const orders = await Order.find({}).sort({ date: -1 });
+    if (!orders || orders.length === 0) throw error("No orders found", 404);
 
     res.status(200).json({
       success: true,
       message: "Orders retrieved successfully",
-      orders
+      orders,
     });
-
   } catch (error) {
     next(error);
   }
@@ -121,8 +121,9 @@ export const allOrders = async (req, res, next) => {
 // change order status
 export const updateStatus = async (req, res, next) => {
   try {
-    const {orderId, status, payment} = req.body;
-    if (!orderId || !status) throw error("Order ID and status are required", 400);
+    const { orderId, status, payment } = req.body;
+    if (!orderId || !status)
+      throw error("Order ID and status are required", 400);
 
     const order = await Order.findById(orderId);
     if (!order) throw error("Order not found", 404);
@@ -136,10 +137,11 @@ export const updateStatus = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Order status updated successfully",
-      order: updatedOrder
+      order: updatedOrder,
     });
-
   } catch (error) {
     next(error);
   }
 };
+
+
