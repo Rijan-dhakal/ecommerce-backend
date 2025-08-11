@@ -27,10 +27,20 @@ export const placeOrder = async (req, res, next) => {
 
     const productIds = items.map((item) => item.productId);
     const products = await Product.find({ _id: { $in: productIds } }).select(
-      "name price"
+      "name price stock"
     );
     if (!products || products.length === 0) {
       throw error("No products found for the given items", 404);
+    }
+
+    // checking the availability
+    for (const item of items) {
+      const product = products.find(
+        (p) => p._id.toString() === item.productId.toString()
+      );
+      if (!product || product.stock < item.quantity) {
+        return res.status(400).json({success: false, message: `Insufficient stock for ${product ? product.name : "Unknown Product"}. Only ${product ? product.stock : 0} left`, stockLeft: product?.stock});
+      }
     }
 
     const newOrder = new Order(orderData);
@@ -63,6 +73,11 @@ export const placeOrder = async (req, res, next) => {
     };
 
     sendEmail(req.user.email, emailData, "order");
+
+    products.forEach(async i => {
+      i.stock -=  items.find(item => item.productId.toString() === i._id.toString()).quantity;
+       await i.save();
+    })
 
     res.status(201).json({
       success: true,

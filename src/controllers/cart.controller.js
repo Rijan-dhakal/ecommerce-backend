@@ -12,14 +12,14 @@ export const addToCart = async (req, res, next) => {
         if(!itemId || !mongoose.Types.ObjectId.isValid(itemId)) throw error("All fields are required OR Invalid itemId", 401)
 
         if(!userId) throw error("Unauthorized", 401)
-
-        console.log(userId);
         
         const userData = await User.findById(userId)
         if(!userData) throw error("User not found", 400)
 
         const isProductExists = await Product.findById(itemId)
         if(!isProductExists ) throw error("Product not found", 404)
+
+        if(isProductExists.stock <= 0) throw error("Product is out of stock", 400)
 
         let cartData = await userData.cartData
 
@@ -58,6 +58,10 @@ export const updateCart = async (req, res, next) => {
         let cartData = await userData.cartData
 
         if(!cartData || !cartData[itemId]) throw error("Item not found in cart", 404)
+
+        const product = await Product.findById(itemId)
+
+        if(quantity > product.stock) throw error(`Insufficient stock. Only ${product.stock} left`, 400)
 
         // Update item quantity in cart
         if(quantity <= 0) {

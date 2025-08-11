@@ -26,12 +26,13 @@ export const addProduct = async (req, res, next) => {
             throw error("Unauthorized", 401);
         }
 
-        const { name, price, description, category, subCategory, bestseller } = req.body;
+        const { name, price, description, category, subCategory, bestseller, stock } = req.body;
 
         if (!name || !price || !description || !category || !subCategory) throw error("All fields are required", 400);
 
 
         if (isNaN(price) || price < 0) throw error("Invalid price", 400);
+        if(stock && (isNaN(stock) || stock < 0)) throw error("Invalid stock", 400);
 
         const image1 = req.files.image1 ? req.files.image1[0].filename : null;
         const image2 = req.files.image2 ? req.files.image2[0].filename : null;
@@ -49,6 +50,7 @@ export const addProduct = async (req, res, next) => {
             user,
             name,
             price: Number(price),
+            stock: Number(stock),
             description,
             category,
             subCategory,
@@ -139,7 +141,7 @@ export const updateProduct = async (req, res, next) => {
         
         if(!isAdmin && productExists.user.toString() !==  userId.toString()) throw error("You are not authorized to modify this product", 403);
 
-        const { name, price, description, category, subCategory, bestseller } = req.body;
+        const { name, price, description, category, subCategory, bestseller, stock } = req.body;
 
         if (isNaN(price) || price < 0) throw error("Invalid price", 400);
 
@@ -158,6 +160,7 @@ export const updateProduct = async (req, res, next) => {
         const productData = {
             name: name ||productExists.name,
             price: Number(price) || productExists.price,
+            stock: Number(stock) || productExists.stock,
             description: description || productExists.description,
             category: category || productExists.category,
             subCategory: subCategory || productExists.subCategory,
